@@ -1,12 +1,13 @@
 ---
 layout: page
 title: About
-subtitle: Just who the hell you think I am?
+subtitle: Software Developer | Writer | Former English Teacher
 permalink: /about/
 ---
 
-This is the base Jekyll theme. You can find out more info about customizing your Jekyll theme, as well as basic Jekyll usage documentation at [jekyllrb.com](http://jekyllrb.com/)
+## Hello 👋🏿 
 
-You can find the source code for the Jekyll new theme at: [github.com/jglovier/jekyll-new](https://github.com/jglovier/jekyll-new)
+My name is Candace. Soon, you'll see a few blog posts related to backend development, data engineering, and machine learning. For now, you can check out my [GitHub](https://github.com/teacherc/) and [LinkedIn](https://www.linkedin.com/in/williams-candace/).
 
-You can find the source code for Jekyll at [github.com/jekyll/jekyll](https://github.com/jekyll/jekyll)
+### Public Projects:
+[Spheri](http://spheri.app) is a web app that gives users Spotify song recommendations based on their local weather conditions. The app received [500+ upvotes in r/Python](https://www.reddit.com/r/Python/comments/zb6ro9/i_got_laid_off_in_midoctober_and_decided_to_teach/) and has [Github contributors](https://github.com/teacherc/spheri-app).
