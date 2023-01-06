@@ -1,7 +1,7 @@
 ---
 layout: page
 title: Hello 👋🏿
-subtitle: Software Developer | Writer | Former English Teacher
+subtitle: Software Developer | Award-Winning Writer | Former English Teacher
 permalink: /about/
 ---
 
