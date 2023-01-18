@@ -153,10 +153,10 @@ ENTRYPOINT [ "python", "pipeline.py" ]
 #### Understanding each instruction
 
 | INSTRUCTION | argument | What’s happening? |
-|:----:|:----:|:----:|
-| FROM        | python:3.9              | Establishes a base image |
-| RUN         | pip install pandas      | Runs PIP to install Pandas |
-| WORKDIR     | /app                    | Changes the current director to /app |
+|:--- |:--- |:--- |
+| FROM        | python:3.9 | Establishes a base image |
+| RUN         | pip install pandas | Runs PIP to install Pandas |
+| WORKDIR     | /app | Changes the current director to /app |
 | COPY        | pipeline.py pipeline.py | Copies pipeline.py from our local host to app/pipeline.py in the container |
 | ENTRYPOINT  | “python”, “pipeline.py” | Runs the `python` command to start the Python interpreter and runs pipeline.py |
 
@@ -175,6 +175,7 @@ day = sys.argv[1]
 
 print(f'Job finished successfully for day = {day}')
 ```
+***
 
 ### Ingesting NY Taxi Data to Postgres
 
@@ -305,6 +306,7 @@ while True:
 
     # Note - The code will end with an exception
 ```
+***
 
 ### Connecting pgAdmin and Postgres
 
@@ -349,5 +351,6 @@ docker run -it \
   --name pgadmin2 \
   dpage/pgadmin4
 ```
+***
 
 ## Forthcoming: Rest of Docker + Postgres, GCP + Terraform, and Environment Setup
