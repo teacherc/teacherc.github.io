@@ -1,10 +1,11 @@
 ---
 layout: post
 title:  "DE Zoomcamp 2023: Week 1 Notes"
-subtitle: "Week 1 - Part 1"
+subtitle: "Running Document for Week 1"
 date:   2023-01-18 01:50:01
 categories: [data-engineering]
 ---
+## Table of Contents
 
 - [Brainstorm: Practices I'm pulling in from past software projects](#brainstorm--practices-i-m-pulling-in-from-past-software-projects)
   * [Take notes in Markdown](#take-notes-in-markdown)
@@ -15,10 +16,26 @@ categories: [data-engineering]
   * [Introduction to Docker](#introduction-to-docker)
     + [Why Docker?](#why-docker-)
   * [Our first Dockerfile and Python pipeline](#our-first-dockerfile-and-python-pipeline)
+    + [What is a Dockerfile?](#what-is-a-dockerfile-)
+    + [Dockerfile Syntax](#dockerfile-syntax)
+    + [Our first Dockerfile](#our-first-dockerfile)
+    + [Understanding each instruction](#understanding-each-instruction)
+    + [Our simple Python pipeline (pipeline.py)](#our-simple-python-pipeline--pipelinepy-)
   * [Ingesting NY Taxi Data to Postgres](#ingesting-ny-taxi-data-to-postgres)
+    + [Key packages to install](#key-packages-to-install)
+    + [Useful documentation](#useful-documentation)
+    + [Docker commands to spin up database](#docker-commands-to-spin-up-database)
+    + [Using pgcli to connect to postgres](#using-pgcli-to-connect-to-postgres)
+    + [CSV link](#csv-link)
+    + [Jupyter Notebook (upload_date.ipynb)](#jupyter-notebook--upload-dateipynb-)
   * [Connecting pgAdmin and Postgres](#connecting-pgadmin-and-postgres)
-  * [Docker Networks](#docker-networks)
+    + [Docker Networks](#docker-networks)
+    + [Create a network](#create-a-network)
+    + [Run Postgres](#run-postgres)
+    + [Run pgAdmin](#run-pgadmin)
 - [Forthcoming: Rest of Docker + Postgres, GCP + Terraform, and Environment Setup](#forthcoming--rest-of-docker---postgres--gcp---terraform--and-environment-setup)
+
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
 ## Brainstorm: Practices I'm pulling in from past software projects
 
@@ -54,26 +71,22 @@ StackOverflow:
 The good thing about “trying three before Slack” is that you’ll gain
 clarity on the best possible question to ask.
 
-Here is how I ask questions in StackOverflow and Slack:
+Here is how I ask questions in StackOverflow and Slack to provide context and reduce back-and-forths:
 
 “I am trying to accomplish _______ (very specific step). I expected _______ but got _______ (error message
 or issue). I tried to resolve the error by _______, _______, and _______
 (write a quick list of the three steps you took to solve your problem). Can someone explain how to _______ (if necessary, explain the
-information you need to move forward).
-
-***
-
-This seems tedious but it’ll yield you better (and/or more) answers with fewer back-and-forths. People need context to answer your question.
+information you need to move forward)."
 
 
 ### Have a growth mindset
 
 In my experience, schools and businesses incentivize getting things
-“right” right away. Students who take on challenging work or actually
+“right” right away. People who take on challenging work or actually
 take time to grapple with concepts are not rewarded. This actually goes
 against all research we have about learning. In order to learn, you need
 to engage in tasks that provide a bit of struggle. As you struggle, new
-connections form in your brain. **That is learning!**
+connections form in your brain - this is how we learn.
 
 ------------------------------------------------------------------------
 
@@ -98,7 +111,6 @@ computing environments, dependencies, and other important elements into
 tidy packages that can be run by anyone (no matter which operating
 system they are using or packages they have already installed).
 
-
 Docker containers are also STATELESS. This means that when you start and stop a container, you lose any changes. When we create more sophisticated Docker instructions, we will [mount volumes](https://docs.docker.com/storage/volumes/).
 
 ### Our first Dockerfile and Python pipeline
@@ -109,14 +121,14 @@ link](https://www.youtube.com/watch?v=EYNwNlOrpr0&list=PL3MmuxUbc_hJed7dXYoJw8Do
 A data pipeline is a process of moving data from one place (the source)
 to a destination (such as a data warehouse).
 
-**What is a Dockerfile?**
+#### What is a Dockerfile?
 
 A `Dockerfile` is a text document that contains all of the commands to
 assemble an image. Docker’s [Dockerfile
 Reference](https://docs.docker.com/engine/reference/builder/) is a
 helpful guide to understanding these files.
 
-**Dockerfile Syntax**
+#### Dockerfile Syntax
 
 Instructions are written in uppercase and specific arguments are
 lowercase.
@@ -125,7 +137,7 @@ lowercase.
 
 Example: `RUN echo 'Hellow world'`
 
-**Our first Dockerfile**
+#### Our first Dockerfile
 
 ``` dockerfile
 FROM python:3.9
@@ -138,6 +150,7 @@ COPY pipeline.py pipeline.py
 ENTRYPOINT [ "python", "pipeline.py" ]
 ```
 
+#### Understanding each instruction
 
 | INSTRUCTION | argument | What’s happening? |
 |:----:|:----:|:----:|
@@ -148,7 +161,7 @@ ENTRYPOINT [ "python", "pipeline.py" ]
 | ENTRYPOINT  | “python”, “pipeline.py” | Runs the `python` command to start the Python interpreter and runs pipeline.py |
 
 
-**Our simple Python pipeline (pipeline.py)**
+#### Our simple Python pipeline (pipeline.py)
 
 ``` python
 import sys
@@ -165,7 +178,7 @@ print(f'Job finished successfully for day = {day}')
 
 ### Ingesting NY Taxi Data to Postgres
 
-**Key packages to install**
+#### Key packages to install
 
 ``` python
 # You might need to use pip3 instead of pip (depends on your environment)
@@ -175,7 +188,7 @@ pip install SQLAlchemy
 pip install psycopg2-binary # You might not need this - I had to install it
 ```
 
-**Useful documentation**
+#### Useful documentation
 
 - [Pandas
   Dataframes](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html)
@@ -185,7 +198,7 @@ pip install psycopg2-binary # You might not need this - I had to install it
 - [Iterators and Iterables - Corey
   Schafer](https://www.youtube.com/watch?v=jTYiNjvnHZY)
 
-**Docker commands to spin up database**
+#### Docker commands to spin up database
 
 ``` python
 docker run -it \
@@ -197,18 +210,18 @@ docker run -it \
   postgres:13
 ```
 
-**Using pgcli to connect to postgres**
+#### Using pgcli to connect to postgres
 
 ``` bash
 pgcli -h localhost -p 5432 -u root -d ny_taxi
 ```
 
-**CSV link**
+#### CSV link
 
 [Link](https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz)
 to NY Taxi Trips Dataset CSV Backup
 
-***Jupyter Notebook (upload_date.ipynb)***
+#### Jupyter Notebook (upload_date.ipynb)
 
 ``` python
 # Import Pandas with the alias pd
@@ -298,19 +311,19 @@ while True:
 Note: This section was particularly hard for me because I did not have the right argument behind the `-v` (`volumes`) flag. I consulted the FAQ and used a volume name instead of a path `-v ny_taxi_postgres_data:/var/lib/postgresql/data`.
 
 
-### Docker Networks
+#### Docker Networks
 
 We need to use a Docker network so that one container that is running
 pgAdmin can communicate with another container that has the database
 (with a mounted volume).
 
-**Create a network**
+#### Create a network
 
 ``` bash
 docker network create pg-network
 ```
 
-**Run Postgres**
+#### Run Postgres
 
 ``` python
 ##Network
@@ -325,7 +338,7 @@ docker run -it \
   postgres:13
 ```
 
-**Run pgAdmin**
+#### Run pgAdmin
 
 ``` python
 docker run -it \
