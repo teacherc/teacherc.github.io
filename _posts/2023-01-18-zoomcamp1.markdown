@@ -2,32 +2,9 @@
 layout: post
 title:  "DE Zoomcamp 2023: Week 1 (Notes and Thoughts)"
 subtitle: "Week 1 - Part 1"
-date:   2022-01-18 01:50:01
+date:   2023-01-18 01:50:01
 categories: [data-engineering]
 ---
-DE Zoomcamp 2023: Week 1 (Notes and Thoughts)
-================
-Candace Williams
-1/17/23
-
-- <a href="#thoughts-my-tips-from-past-software-projects"
-  id="toc-thoughts-my-tips-from-past-software-projects"><span
-  class="toc-section-number">1</span> Thoughts: My tips from past software
-  projects</a>
-  - <a href="#take-notes-in-markdown" id="toc-take-notes-in-markdown"><span
-    class="toc-section-number">1.1</span> Take notes in Markdown</a>
-  - <a href="#try-three-before-slack" id="toc-try-three-before-slack"><span
-    class="toc-section-number">1.2</span> “Try three before Slack”</a>
-  - <a href="#ask-the-best-possible-question"
-    id="toc-ask-the-best-possible-question"><span
-    class="toc-section-number">1.3</span> Ask the best possible question</a>
-  - <a href="#have-a-growth-mindset" id="toc-have-a-growth-mindset"><span
-    class="toc-section-number">1.4</span> Have a growth mindset</a>
-- <a href="#notes-docker-and-postgres"
-  id="toc-notes-docker-and-postgres"><span
-  class="toc-section-number">2</span> Notes: Docker and Postgres</a>
-  - <a href="#introduction-to-docker" id="toc-introduction-to-docker"><span
-    class="toc-section-number">2.1</span> Introduction to Docker</a>
 
 ## Thoughts: My tips from past software projects
 
@@ -37,15 +14,11 @@ After I complete a unit of work, I take notes in a format that allows me
 to show code and Markdown text in the same document via a GitHub gist,
 [Jupyter Notebooks](https://jupyter.org/try), or Quarto.
 
-<div>
 
-> **Note**
->
-> [Google Colab](https://colab.research.google.com/) is a great place to
-> take notes because Colab notebooks are free (you can even access free
-> GPUs if necessary and linked to your Google account).
+**Note**
 
-</div>
+[Google Colab](https://colab.research.google.com/) is a great place to take notes because Colab notebooks are free (you can even access free GPUs if necessary and linked to your Google account).
+
 
 ### “Try three before Slack”
 
@@ -72,26 +45,20 @@ clarity on the best possible question to ask.
 
 Here is how I ask questions in StackOverflow and Slack:
 
-“I am trying to accomplish \_\_\_\_\_\_\_\_\_ (very specific step).
+“I am trying to accomplish _______ (very specific step).
 
-I expected \_\_\_\_\_\_\_\_ but got \_\_\_\_\_\_\_\_\_\_ (error message
+I expected _______ but got _______ (error message
 or issue).
 
-I tried to resolve the error by \_\_\_\_\_, \_\_\_\_\_, and \_\_\_\_
+I tried to resolve the error by _______, _______, and _______
 (write a quick list of the three steps you took to solve your problem).
 
-Can someone explain how to \_\_\_\_\_\_\_\_ (if necessary, explain the
+Can someone explain how to _______ (if necessary, explain the
 information you need to move forward).
 
-<div>
+**Note**
+This seems tedious but it’ll yield you better (and/or more) answers with fewer back-and-forths. People need context to answer your question.
 
-> **Note**
->
-> This seems tedious but it’ll yield you better (and/or more) answers
-> with fewer back-and-forths. People need context to answer your
-> question.
-
-</div>
 
 ### Have a growth mindset
 
@@ -125,17 +92,9 @@ computing environments, dependencies, and other important elements into
 tidy packages that can be run by anyone (no matter which operating
 system they are using or packages they have already installed).
 
-<div>
+**Important**
 
-> **Important**
->
-> Docker containers are also STATELESS. This means that when you start
-> and stop a container, you lose any changes.
->
-> When we create more sophisticated Docker instructions, we will [mount
-> volumes](https://docs.docker.com/storage/volumes/).
-
-</div>
+Docker containers are also STATELESS. This means that when you start and stop a container, you lose any changes. When we create more sophisticated Docker instructions, we will [mount volumes](https://docs.docker.com/storage/volumes/).
 
 #### Our first Dockerfile and Python pipeline
 
@@ -143,10 +102,7 @@ system they are using or packages they have already installed).
 link](https://www.youtube.com/watch?v=EYNwNlOrpr0&list=PL3MmuxUbc_hJed7dXYoJw8DoCuVHhGEQb)
 
 A data pipeline is a process of moving data from one place (the source)
-to a destination (such as a data warehouse). Here is an example:
-
-CSV (source) –\> Data Pipeline (via a Python Script) –\> Table in
-Postgres (destination)
+to a destination (such as a data warehouse).
 
 **What is a Dockerfile?**
 
@@ -177,6 +133,7 @@ COPY pipeline.py pipeline.py
 ENTRYPOINT [ "python", "pipeline.py" ]
 ```
 
+
 | INSTRUCTION | argument                | What’s happening?                                                              |
 |-------------|-------------------------|--------------------------------------------------------------------------------|
 | FROM        | python:3.9              | Establishes a base image                                                       |
@@ -184,6 +141,7 @@ ENTRYPOINT [ "python", "pipeline.py" ]
 | WORKDIR     | /app                    | Changes the current director to /app                                           |
 | COPY        | pipeline.py pipeline.py | Copies pipeline.py from our local host to app/pipeline.py in the container     |
 | ENTRYPOINT  | “python”, “pipeline.py” | Runs the `python` command to start the Python interpreter and runs pipeline.py |
+
 
 **Our simple Python pipeline (pipeline.py)**
 
@@ -200,7 +158,7 @@ day = sys.argv[1]
 print(f'Job finished successfully for day = {day}')
 ```
 
-#### Ingesting NY Taxi Data to Postgres
+### Ingesting NY Taxi Data to Postgres
 
 **Key packages to install**
 
@@ -330,20 +288,14 @@ while True:
     # Note - The code will end with an exception
 ```
 
-#### Connecting pgAdmin and Postgres
+### Connecting pgAdmin and Postgres
 
-<div>
+**Tip**
 
-> **Tip**
->
-> This section was particularly hard for me because I did not have the
-> right argument behind the `-v` (`volumes`) flag. I consulted the FAQ
-> and used a volume name instead of a path
-> `-v ny_taxi_postgres_data:/var/lib/postgresql/data`.
+This section was particularly hard for me because I did not have the right argument behind the `-v` (`volumes`) flag. I consulted the FAQ and used a volume name instead of a path `-v ny_taxi_postgres_data:/var/lib/postgresql/data`.
 
-</div>
 
-##### Docker Networks
+## Docker Networks
 
 We need to use a Docker network so that one container that is running
 pgAdmin can communicate with another container that has the database
@@ -382,4 +334,4 @@ docker run -it \
   dpage/pgadmin4
 ```
 
-####Forthcoming: Rest of Docker + Postgres, GCP + Terraform, and Environment Setup
+#### Forthcoming: Rest of Docker + Postgres, GCP + Terraform, and Environment Setup
