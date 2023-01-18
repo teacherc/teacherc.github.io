@@ -1,21 +1,32 @@
 ---
 layout: post
-title:  "DE Zoomcamp 2023: Week 1 (Notes and Thoughts)"
+title:  "DE Zoomcamp 2023: Week 1 Notes"
 subtitle: "Week 1 - Part 1"
 date:   2023-01-18 01:50:01
 categories: [data-engineering]
 ---
 
-## Thoughts: My tips from past software projects
+- [Brainstorm: Practices I'm pulling in from past software projects](#brainstorm--practices-i-m-pulling-in-from-past-software-projects)
+  * [Take notes in Markdown](#take-notes-in-markdown)
+  * [“Try three before Slack”](#-try-three-before-slack-)
+  * [Ask the best possible question](#ask-the-best-possible-question)
+  * [Have a growth mindset](#have-a-growth-mindset)
+- [Notes: Docker and Postgres](#notes--docker-and-postgres)
+  * [Introduction to Docker](#introduction-to-docker)
+    + [Why Docker?](#why-docker-)
+  * [Our first Dockerfile and Python pipeline](#our-first-dockerfile-and-python-pipeline)
+  * [Ingesting NY Taxi Data to Postgres](#ingesting-ny-taxi-data-to-postgres)
+  * [Connecting pgAdmin and Postgres](#connecting-pgadmin-and-postgres)
+  * [Docker Networks](#docker-networks)
+- [Forthcoming: Rest of Docker + Postgres, GCP + Terraform, and Environment Setup](#forthcoming--rest-of-docker---postgres--gcp---terraform--and-environment-setup)
+
+## Brainstorm: Practices I'm pulling in from past software projects
 
 ### Take notes in Markdown
 
 After I complete a unit of work, I take notes in a format that allows me
 to show code and Markdown text in the same document via a GitHub gist,
 [Jupyter Notebooks](https://jupyter.org/try), or Quarto.
-
-
-**Note**
 
 [Google Colab](https://colab.research.google.com/) is a great place to take notes because Colab notebooks are free (you can even access free GPUs if necessary and linked to your Google account).
 
@@ -45,18 +56,13 @@ clarity on the best possible question to ask.
 
 Here is how I ask questions in StackOverflow and Slack:
 
-“I am trying to accomplish _______ (very specific step).
-
-I expected _______ but got _______ (error message
-or issue).
-
-I tried to resolve the error by _______, _______, and _______
-(write a quick list of the three steps you took to solve your problem).
-
-Can someone explain how to _______ (if necessary, explain the
+“I am trying to accomplish _______ (very specific step). I expected _______ but got _______ (error message
+or issue). I tried to resolve the error by _______, _______, and _______
+(write a quick list of the three steps you took to solve your problem). Can someone explain how to _______ (if necessary, explain the
 information you need to move forward).
 
-**Note**
+***
+
 This seems tedious but it’ll yield you better (and/or more) answers with fewer back-and-forths. People need context to answer your question.
 
 
@@ -92,11 +98,10 @@ computing environments, dependencies, and other important elements into
 tidy packages that can be run by anyone (no matter which operating
 system they are using or packages they have already installed).
 
-**Important**
 
 Docker containers are also STATELESS. This means that when you start and stop a container, you lose any changes. When we create more sophisticated Docker instructions, we will [mount volumes](https://docs.docker.com/storage/volumes/).
 
-#### Our first Dockerfile and Python pipeline
+### Our first Dockerfile and Python pipeline
 
 [Video
 link](https://www.youtube.com/watch?v=EYNwNlOrpr0&list=PL3MmuxUbc_hJed7dXYoJw8DoCuVHhGEQb)
@@ -134,12 +139,12 @@ ENTRYPOINT [ "python", "pipeline.py" ]
 ```
 
 
-| INSTRUCTION | argument                | What’s happening?                                                              |
-|-------------|-------------------------|--------------------------------------------------------------------------------|
-| FROM        | python:3.9              | Establishes a base image                                                       |
-| RUN         | pip install pandas      | Runs PIP to install Pandas                                                     |
-| WORKDIR     | /app                    | Changes the current director to /app                                           |
-| COPY        | pipeline.py pipeline.py | Copies pipeline.py from our local host to app/pipeline.py in the container     |
+| INSTRUCTION | argument | What’s happening? |
+|:----:|:----:|:----:|
+| FROM        | python:3.9              | Establishes a base image |
+| RUN         | pip install pandas      | Runs PIP to install Pandas |
+| WORKDIR     | /app                    | Changes the current director to /app |
+| COPY        | pipeline.py pipeline.py | Copies pipeline.py from our local host to app/pipeline.py in the container |
 | ENTRYPOINT  | “python”, “pipeline.py” | Runs the `python` command to start the Python interpreter and runs pipeline.py |
 
 
@@ -203,7 +208,7 @@ pgcli -h localhost -p 5432 -u root -d ny_taxi
 [Link](https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz)
 to NY Taxi Trips Dataset CSV Backup
 
-##### Jupyter Notebook (upload_date.ipynb)
+***Jupyter Notebook (upload_date.ipynb)***
 
 ``` python
 # Import Pandas with the alias pd
@@ -290,12 +295,10 @@ while True:
 
 ### Connecting pgAdmin and Postgres
 
-**Tip**
-
-This section was particularly hard for me because I did not have the right argument behind the `-v` (`volumes`) flag. I consulted the FAQ and used a volume name instead of a path `-v ny_taxi_postgres_data:/var/lib/postgresql/data`.
+Note: This section was particularly hard for me because I did not have the right argument behind the `-v` (`volumes`) flag. I consulted the FAQ and used a volume name instead of a path `-v ny_taxi_postgres_data:/var/lib/postgresql/data`.
 
 
-## Docker Networks
+### Docker Networks
 
 We need to use a Docker network so that one container that is running
 pgAdmin can communicate with another container that has the database
@@ -334,4 +337,4 @@ docker run -it \
   dpage/pgadmin4
 ```
 
-#### Forthcoming: Rest of Docker + Postgres, GCP + Terraform, and Environment Setup
+## Forthcoming: Rest of Docker + Postgres, GCP + Terraform, and Environment Setup
