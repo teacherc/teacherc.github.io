@@ -133,9 +133,9 @@ helpful guide to understanding these files.
 Instructions are written in uppercase and specific arguments are
 lowercase.
 
-`INSTRUCTION arguments`
-
-Example: `RUN echo 'Hellow world'`
+```dockerfile
+INSTRUCTION arguments
+```
 
 #### Our first Dockerfile
 
@@ -152,13 +152,13 @@ ENTRYPOINT [ "python", "pipeline.py" ]
 
 #### Understanding each instruction
 
-| INSTRUCTION | argument | What’s happening? |
-|:--- |:--- |:--- |
-| FROM        | python:3.9 | Establishes a base image |
-| RUN         | pip install pandas | Runs PIP to install Pandas |
-| WORKDIR     | /app | Changes the current director to /app |
-| COPY        | pipeline.py pipeline.py | Copies pipeline.py from our local host to app/pipeline.py in the container |
-| ENTRYPOINT  | “python”, “pipeline.py” | Runs the `python` command to start the Python interpreter and runs pipeline.py |
+| INSTRUCTION |  argument | What’s happening? |
+|:--- | :--- |:--- |
+| FROM        |  python:3.9  | Establishes a base image |
+| RUN         |  pip install pandas  | Runs PIP to install Pandas |
+| WORKDIR     |  /app  | Changes the current director to /app |
+| COPY        |  pipeline.py pipeline.py  | Copies pipeline.py from our local host to app/pipeline.py in the container |
+| ENTRYPOINT  |  “python”, “pipeline.py”  | Runs the `python` command to start the Python interpreter and runs pipeline.py |
 
 
 #### Our simple Python pipeline (pipeline.py)
@@ -219,8 +219,9 @@ pgcli -h localhost -p 5432 -u root -d ny_taxi
 
 #### CSV link
 
-[Link](https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz)
-to NY Taxi Trips Dataset CSV Backup
+Link to CSV backup:
+<https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz>
+
 
 #### Jupyter Notebook (upload_date.ipynb)
 
@@ -310,14 +311,16 @@ while True:
 
 ### Connecting pgAdmin and Postgres
 
-Note: This section was particularly hard for me because I did not have the right argument behind the `-v` (`volumes`) flag. I consulted the FAQ and used a volume name instead of a path `-v ny_taxi_postgres_data:/var/lib/postgresql/data`.
+Note: This section was particularly hard for me because I did not have the right argument behind the -v flag. I consulted the FAQ and used a volume name instead of a path:
+
+```dockerfile
+-v ny_taxi_postgres_data:/var/lib/postgresql/data
+```
 
 
 #### Docker Networks
 
-We need to use a Docker network so that one container that is running
-pgAdmin can communicate with another container that has the database
-(with a mounted volume).
+We need to use a Docker network so that one container that is running pgAdmin can communicate with another container that has the database (with a mounted volume).
 
 #### Create a network
 
