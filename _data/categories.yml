@@ -1,5 +1,8 @@
 - slug: projects
   name: Projects
 
+- slug: data-engineering
+  name: Data Engineering
+
 # - slug: tools
 #  name: Tools

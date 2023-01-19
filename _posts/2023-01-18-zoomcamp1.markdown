@@ -33,7 +33,16 @@ categories: [data-engineering]
     + [Create a network](#create-a-network)
     + [Run Postgres](#run-postgres)
     + [Run pgAdmin](#run-pgadmin)
-- [Forthcoming: Rest of Docker + Postgres, GCP + Terraform, and Environment Setup](#forthcoming--rest-of-docker---postgres--gcp---terraform--and-environment-setup)
+  * [Putting the ingestion script into Docker](#putting-the-ingestion-script-into-docker)
+    + [Converting the Jupyter notebook to a Python script](#converting-the-jupyter-notebook-to-a-python-script)
+    + [Parametrizing the script with argparse](#parametrizing-the-script-with-argparse)
+      - [Why argparse?](#why-argparse-)
+    + [Dockerizing the ingestion script](#dockerizing-the-ingestion-script)
+    + [Docker Compose](#docker-compose)
+- [Forthcoming: SQL, GCP + Terraform, and Environment Setup](#forthcoming--sql--gcp---terraform--and-environment-setup)
+
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
@@ -317,7 +326,6 @@ Note: This section was particularly hard for me because I did not have the right
 -v ny_taxi_postgres_data:/var/lib/postgresql/data
 ```
 
-
 #### Docker Networks
 
 We need to use a Docker network so that one container that is running pgAdmin can communicate with another container that has the database (with a mounted volume).
@@ -356,4 +364,201 @@ docker run -it \
 ```
 ***
 
-## Forthcoming: Rest of Docker + Postgres, GCP + Terraform, and Environment Setup
+### Putting the ingestion script into Docker
+
+#### Converting the Jupyter notebook to a Python script
+
+Jupyter notebooks are useful because they help us:
+- Create a [computational narrative](https://odsc.medium.com/why-you-should-be-using-jupyter-notebooks-ea2e568c59f2) that others can understand and modify independently
+- Document our actions and learning with both code snippets and text
+- Run pieces of a script or a program line by line (this helps with troubleshooting)
+
+We used a Jupyter notebook to write and use a Python script. A script is a set of instructions for an external system (a script can be deleted without changing or disabling the target system). Scripts are an important part of data pipelines because we need sets of instructions to manipulate data (including downloading, ingesting, etc).
+
+Now, we need to take the instructions in the Jupyter notebook, copy-paste them into a python file (ours will be called ingest_data.py) and clean up the instructions so a Python interpreter can read them.
+
+#### Parametrizing the script with argparse
+
+After creating the ingest_data.py file, copying the Jupyter code blocks over, and cleaning up the file (see video), we need to use argparse.
+
+##### Why argparse?
+
+When we created our Jupyter notebook, we were making it for a very specific use case. We used these arguments to specify the name of the file ('yellow_tripdata_2021-01.csv'), postgres-related information for the engine (username, password, port, and name - 'postgresql://root:root@localhost:5432/ny_taxi'), and other information.
+
+To make our script more extendable, we need to make it so that many of these pieces of information are variables that a user can pass through when they run the script. Python's argparse module allows us to communite with the user - the script will use argparse to know which arguments to take in from the user and where to pass them into the script. This is a great [primer](https://towardsdatascience.com/learn-enough-python-to-be-useful-argparse-e482e1764e05) on argparse from the perspective of a data scientist.
+
+This is what our script looks like after pulling it from our Jupyter notebook into a .py file, cleaning it up, and using argparse:
+
+```python
+import pandas as pd
+from sqlalchemy import create_engine
+import psycopg2
+from time import time
+import argparse
+import os
+
+
+# Main function - ingests csv data to postgres db
+def main(params):
+    # define parameters
+    user = params.user
+    password = params.password
+    host = params.host
+    port = params.port
+    db = params.db
+    table_name = params.table_name
+    url = params.url
+    csv_name = 'output.csv.gz'
+   
+    # download the csv
+    os.system(f"wget {url} -O {csv_name}")
+
+    # prepare data for ingestion
+    engine = create_engine(f'postgresql://{user}:{password}@{host}:{port}/{db}')
+
+    df_iter = pd.read_csv(csv_name, iterator=True, chunksize=100_000)
+
+    df = next(df_iter)
+
+    df.tpep_pickup_datetime = pd.to_datetime(df.tpep_pickup_datetime)
+    df.tpep_dropoff_datetime = pd.to_datetime(df.tpep_dropoff_datetime)
+
+    df.head(n=0).to_sql(name=table_name, con=engine, if_exists='replace')
+
+    df.to_sql(name=table_name, con=engine, if_exists='append')
+
+    # while loop for data ingestion
+    while True:
+        t_start = time()
+        
+        df = next(df_iter)
+        
+        df.tpep_pickup_datetime = pd.to_datetime(df.tpep_pickup_datetime)
+        df.tpep_dropoff_datetime = pd.to_datetime(df.tpep_dropoff_datetime)
+        
+        df.to_sql(name=table_name, con=engine, if_exists='append')
+        
+        t_end = time()
+        
+        print('inserted another chunk...took %.3f second' % (t_end - t_start))
+
+# main function
+if __name__ == "__main__":
+    # parse arguments - user, password, host, port, database name , table name, url of the csv
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--user', help='username for postgres')
+    parser.add_argument('--password', help='password for postgres')
+    parser.add_argument('--host', help='host for postgres')
+    parser.add_argument('--port', help='port for postgres')
+    parser.add_argument('--db', help='database name for postgres')
+    parser.add_argument('--table_name', help='name of the table where we will write the results to')
+    parser.add_argument('--url', help='url of the csv file')
+
+    args = parser.parse_args()
+
+    main(args)
+
+```
+
+Since this script is a Python program, we had to use 'if __name__ == "__main__'. Check out Corey Schafer's [YouTube video about 'if __name__ == "__main__'](https://www.youtube.com/watch?v=sugvnHA7ElY) for more information about it.
+
+To test the script, we have to drop our existing table (via pgadmin) and run this in a terminal:
+
+```bash
+URL="https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz"
+
+python ingest_data.py \
+  --user=root \
+  --password=root \
+  --host=localhost \
+  --port=5432 \
+  --db=ny_taxi \
+  --table_name=yellow_taxi_trips \
+  --url=${URL}
+```
+
+After running this, the table should be visible in pgadmin (after a refresh.)
+
+#### Dockerizing the ingestion script
+
+It would be VERY annoying if we had to run three containers whenever we wanted to ingest and see data in pgadmin. We can do all of this with one yaml file.
+
+The first step is to update the dockerfile:
+
+```dockerfile
+FROM python:3.9
+
+RUN apt-get install wget
+RUN pip install pandas sqlalchemy psycopg2
+
+WORKDIR /app
+COPY ingest_data.py ingest_data.py
+
+ENTRYPOINT [ "python", "ingest_data.py" ]
+```
+
+Then, we build the Docker container (don't forget the period at the end!):
+
+```bash
+docker build -t taxi_ingest:v001 .
+```
+
+Now, our ingestion script can be run via Docker (with a few modifications):
+
+```dockerfile
+URL="https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz"
+
+docker run -it \
+  --network=pg-network \
+  taxi_ingest:v001 \
+    --user=root \
+    --password=root \
+    --host=pg-database \
+    --port=5432 \
+    --db=ny_taxi \
+    --table_name=yellow_taxi_trips \
+    --url=${URL}
+```
+
+#### Docker Compose
+
+We make a docker-compose.yaml file that looks like this:
+
+```yaml
+services:
+  pgdatabase:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=ny_taxi
+    volumes:
+      - "./ny_taxi_postgres_data:/var/lib/postgresql/data:rw"
+    ports:
+      - "5432:5432"
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=root
+    ports:
+      - "8080:80"
+```
+
+Then, we make sure that we kill containers that are already running (CTRL+C in running terminals). Now, we can test it:
+
+```
+docker-compose up
+```
+
+I like to use 'detached' mode so I can use the terminal as the container is running:
+
+```
+docker-compose up -d
+```
+
+When the container is running, you should be able to log in to pgadmin, add the server, and see the tables we've created.
+
+***
+
+## Forthcoming: SQL, GCP + Terraform, and Environment Setup
