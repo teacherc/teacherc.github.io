@@ -561,4 +561,346 @@ When the container is running, you should be able to log in to pgadmin, add the 
 
 ***
 
-## Forthcoming: SQL, GCP + Terraform, and Environment Setup
+## SQL
+
+### Why?
+SQL allows us to store, manipulate, and query information in relational databases. Each type of SQL databases has a different flavor of SQL (MySQL, PostgresQL, etc).
+
+We are using Postgres so our flavor is PostgreSQL.
+
+### Resources
+
+My favorite SQL links:
+- [PostgreSQL Tutorial](https://www.postgresqltutorial.com/)
+- [Danny Ma's 8-Week SQL Challenge](https://8weeksqlchallenge.com/case-study-1/)
+- [Socratica's SQL lessons on YouTube](https://www.youtube.com/watch?v=nWyyDHhTxYU)
+
+## GCP
+
+### What is GCP?
+
+Google Cloud Platform is a provider of cloud computing and storage services.
+
+Useful resources
+- [Containers vs VMs: What's the difference?](https://www.youtube.com/watch?v=cjXI-yxqGTI)
+- [GCP video channel](https://www.youtube.com/@googlecloudtech)
+
+### Initial GCP Setup
+
+1. Signup for a free trial (you can create a new email account if you need another trial)
+2. Create your first project and note the "Project ID" (for future steps)
+3. Create a servie account for this project and give it roles [IAM](https://console.cloud.google.com/iam-admin/iam)
+  a. Viewer
+  b. Storage Admin
+  c. Storage Object Admin
+  d. BigQuery Admin
+4. Download the service account keys (.json file)
+5. Download the [SDK](https://cloud.google.com/sdk/docs/quickstart)
+6. Set environment variable to point to your downloaded GCP keys:
+```console
+export GOOGLE_APPLICATION_CREDENTIALS="<path/to/your/service-account-authkeys>.json"
+```
+7. Enable APIs
+  a. https://console.cloud.google.com/apis/library/iam.googleapis.com
+  b. https://console.cloud.google.com/apis/library/iamcredentials.googleapis.com
+8. Set the default login and verify auth
+```gcloud auth application-default login```
+
+## Terraform
+
+### What is Terraform?
+Terraform is an open-source Infrastructure-as-Code (IaC) tool created by Hashicorp. It allows software developers to define and manage their infrastructure via code (instead of using GUIs and other tools). Being able to share, version, and test infrastructure the same way we test code is VERY useful.
+
+### Resources
+- [What is Terraform & Infrastructure as Code (IaC)?](https://acloudguru.com/blog/engineering/what-is-terraform-infrastructure-as-code-iac)
+- [Terraform GCP Documentation](https://developer.hashicorp.com/terraform/tutorials/gcp-get-started)
+
+### Important files
+
+main.tf
+```tf
+terraform {
+  required_version = ">= 1.0"
+  backend "local" {}  # Can change from "local" to "gcs" (for google) or "s3" (for aws), if you would like to preserve your tf-state online
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+    }
+  }
+}
+
+provider "google" {
+  project = var.project
+  region = var.region
+  // credentials = file(var.credentials)  # Use this if you do not want to set env-var GOOGLE_APPLICATION_CREDENTIALS
+}
+
+# Data Lake Bucket
+# Ref: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket
+resource "google_storage_bucket" "data-lake-bucket" {
+  name          = "${local.data_lake_bucket}_${var.project}" # Concatenating DL bucket & Project name for unique naming
+  location      = var.region
+
+  # Optional, but recommended settings:
+  storage_class = var.storage_class
+  uniform_bucket_level_access = true
+
+  versioning {
+    enabled     = true
+  }
+
+  lifecycle_rule {
+    action {
+      type = "Delete"
+    }
+    condition {
+      age = 30  // days
+    }
+  }
+
+  force_destroy = true
+}
+
+# DWH
+# Ref: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/bigquery_dataset
+resource "google_bigquery_dataset" "dataset" {
+  dataset_id = var.BQ_DATASET
+  project    = var.project
+  location   = var.region
+}
+```
+
+variables.tf
+```tf
+locals {
+  data_lake_bucket = "dtc_data_lake"
+}
+
+variable "project" {
+  description = "Your GCP Project ID"
+}
+
+variable "region" {
+  description = "Region for GCP resources. Choose as per your location: https://cloud.google.com/about/locations"
+  default = "europe-west6"
+  type = string
+}
+
+variable "storage_class" {
+  description = "Storage class type for your bucket. Check official docs for more info."
+  default = "STANDARD"
+}
+
+variable "BQ_DATASET" {
+  description = "BigQuery Dataset that raw data (from GCS) will be written to"
+  type = string
+  default = "trips_data_all"
+}
+```
+
+.terraform-version
+```tf
+1.0.2
+
+```
+### Execution Steps
+
+```
+# Refresh service-account's auth-token for this session
+gcloud auth application-default login
+
+# Initialize state file (.tfstate)
+terraform init
+
+# Check changes to new infra plan
+terraform plan -var="project=<your-gcp-project-id>"
+```
+
+```
+# Create new infra
+terraform apply -var="project=<your-gcp-project-id>"
+```
+
+```
+# Delete infra after your work, to avoid costs on any running services
+terraform destroy
+```
+
+## Virtual Environment Setup
+
+### What is SSH?
+
+[SSH](https://www.ucl.ac.uk/isd/what-ssh-and-how-do-i-use-it) or "Secure Shell" is a communication protocol that allows computers to encrypt, exchange, and decrypt information. 
+
+[SSH keys](https://jumpcloud.com/blog/what-are-ssh-keys) come in pairs. The public key can be widely shared and is used to encrypt information. The private key can decrypt information (make sure your private key is never shared).
+
+### Generate SSH Keys
+
+Resource: [Google Cloud documentation - Create SSH Keys](https://cloud.google.com/compute/docs/connect/create-ssh-keys)
+
+1. Make sure you are in the ```~/.ssh``` directory (typically ```cd /.ssh```)
+
+If you do not have this directory, you should create it. Use the ```ls``` command in your terminal to see which files are already in this directory. Files that end with ```.pub``` are public keys.
+
+2. Use the ```ssh-keygen``` utility 
+
+Use this (or a variation of this) command:
+```ssh-keygen -t rsa -f ~/.ssh/KEY_FILENAME -C USERNAME -b 2048```
+
+My example: ```ssh-keygen -t rsa -f ~/.ssh/gcp -C candace -b 2048```
+
+When it prompts you for a passphrase, leave it empty.
+
+3. Use the ```ls``` command to make sure the public AND private keys are there (```gcp``` and ```gcp.pub```)
+
+### Upload Public Key to GCP
+
+4. Navigate to the [VM Metadata](https://console.cloud.google.com/compute/metadata?_ga=2.27862460.1443282184.1674762012-1094820131.1673986597) page and add your PUBLIC ssh keys (ssh tab)
+
+In the terminal window where you are at the ```~/.ssh``` directory, type ```cat gcp.pub``` to have the terminal print the contents of your PUBLIC ssh key. Copy the text of the key and paste it into the ssh section of the Metadata page in Google Cloud Console.
+
+### Create a VM
+
+5. Create a new VM instance in the cloud console
+
+Pay particular attention to:
+- Name - ```de-zoomcamp```
+- Region - You can choose a low CO2 option
+- Series - E2
+- Machine - E2 - Standard - 4 or higher (watch out for the cost)
+- Boot Disk
+  - Operating system - Ubuntu
+  - Version - 20.04 LTS (AMD64)
+  - Boot Disk Type - Balanced Persistent Disk
+  - Boot Disk Size - 30 GB
+
+6. Note the external IP (copy it from the list of VM instances) 
+
+### SSH into VM
+
+In your terminal write ```ssh -i ~/.ssh/gcp USERNAME@VM_EXTERNAL_GCP```
+
+My example: ```ssh -i ~/.ssh/gcp candace@22.222.22.22```
+
+If it asks you to continue, say yes.
+
+You will be logged into the VM (as you can see in the terminal - ```candace@de-zoomcamp```)
+
+
+### Configure the VM
+
+#### Download Anaconda
+
+Go to [this page](https://www.anaconda.com/products/distribution) and find the latest 64-Bit (x86) Installer. Right-click on the installer link to copy the link.
+
+In your de-zoomcamp terminal do a wget to download the file
+
+```wget LINK_TO_INSTALLER```
+
+My example: ```wget https://repo.anaconda.com/archive/Anaconda3-2022.10-Linux-x86_64.sh```
+
+The last line of the download will give you a link to a file. Copy that to create the next command:
+
+```bash FILENAME```
+
+example: ```bash Anaconda3-2021.11-Linux-x86_64.sh```
+
+Run the installer and accept the terms of service with 'yes'. Let it run ```conda init``` if asked. 
+
+Log out of your ssh session and log back in. You should see the word (base) in front of your console name. Test ```which python``` to make sure it is coming from the Anaconda directory. Type ```source .bashrc``` if you do not want to log in and out.
+
+#### Download Docker
+From your ssh terminal:
+```sudo apt-get update```
+```sudo apt-get install docker.io```
+
+Follow these directions to run Docker without sudo: https://github.com/sindresorhus/guides/blob/main/docker-without-sudo.md
+
+##### Download docker-compose
+
+Head to the docker-compose releases page: https://github.com/docker/compose/releases/tag/v2.15.1
+
+Make a ```bin``` directory:
+
+```console
+mkdir bin
+cd /bin
+```
+
+In the list of releases, find the latest ```Linux-x86-64``` release. Copy-paste the link.
+
+My example: https://github.com/docker/compose/releases/download/v2.15.1/docker-compose-linux-x86_64
+
+Add this to a ```wget``` in the ```/bin``` directory. Specify the output with flags.
+
+Example: ```wget https://github.com/docker/compose/releases/download/v2.15.1/docker-compose-linux-x86_64 -O docker-compose```
+
+Use ```ls``` to in ```/bin``` to make sure the ```docker-compose``` file is there.
+
+Run ```chmod +x docker-compose``` to make the file executable.
+
+The last step to installing docker-compose is to make it executable from any directory.
+
+In your ssh terminal, in the home directory, run ```nano .bashrc``` to open up your bashrc file.
+
+At the end of the file, type: ```export PATH="{HOME}/bin:${PATH}"
+
+Save by hitting ENTER and typing CTRL-X. 
+
+Read the .bashrc file with ```source .bashrc```.
+
+In the home directory, test your work by typing ```which docker-compose```
+
+### Install pgcli
+
+In the ssh terminal, type ```pip install pgcli```
+
+### SSH with VSCode
+
+In a terminal in your home directory (not the ssh terminal), navigate to the ```~/.ssh``` directory.
+
+Use ```touch config``` to create a config file in the ```~/.ssh``` directory.
+
+Open that file in VSCode.
+
+config file
+```
+Host de-zoomcamp
+  HostName 22.222.22.22 #Put the external IP from the GCP VM here
+  User candace
+  IdentityFile ~/.ssh/gcp # Different on Windows
+```
+
+From a terminal in your home directory, try ```ssh de-zoomcamp```. Since you created the config file, this should create a ssh connection to your VM instance.
+
+Download the [Remote - SSH](https://code.visualstudio.com/docs/remote/ssh-tutorial) extension in VSCode.
+
+Open the Command Pallette in Docker and find the ```Remote-SSH Connect to Host...``` option. It should off you ```de-zoomcamp``` right away.
+
+Open a terminal in VSCode - now you have a ssh session in VSCode
+
+### Port Forwarding in VSCode
+
+In the terminal area, click on ```Port Forwarding```. Add the ports 5432, 8888, and 8080 to the list.
+
+### Use pgadmin and Jupyter to run upload-data notebook (ingest data)
+
+Clone the Zoomcamp repo: ```git clone https://github.com/DataTalksClub/data-engineering-zoomcamp.git```
+
+Navigate to ```~data-engineering-zoomcamp/week_1_basics_n_setup/2_docker_sql``` in your ssh terminal
+
+Use the command ```docker-compose up -d``` to build the docker containers (it'll use the Dockerfile)
+
+Run ```docker ps``` to see if both containers are running. Note the name of the pgdatabase terminal. In my case, it was ```2_docker_sql_pgdatabase-1```
+
+
+
+### Install Terraform
+
+### SFTP Google Credentials to VM
+
+### Configure gcloud
+
+### Run Terraform commands
+
+### How to start and stop VM (DO NOT DELETE!)
