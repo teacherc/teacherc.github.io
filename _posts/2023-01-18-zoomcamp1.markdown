@@ -39,12 +39,38 @@ categories: [data-engineering]
       - [Why argparse?](#why-argparse-)
     + [Dockerizing the ingestion script](#dockerizing-the-ingestion-script)
     + [Docker Compose](#docker-compose)
-- [Forthcoming: SQL, GCP + Terraform, and Environment Setup](#forthcoming--sql--gcp---terraform--and-environment-setup)
+- [SQL](#sql)
+  * [Why?](#why-)
+  * [Resources](#resources)
+- [GCP](#gcp)
+  * [What is GCP?](#what-is-gcp-)
+  * [Initial GCP Setup](#initial-gcp-setup)
+- [Terraform](#terraform)
+  * [What is Terraform?](#what-is-terraform-)
+  * [Resources](#resources-1)
+  * [Important files](#important-files)
+  * [Execution Steps](#execution-steps)
+- [Virtual Environment Setup](#virtual-environment-setup)
+  * [What is SSH?](#what-is-ssh-)
+  * [Generate SSH Keys](#generate-ssh-keys)
+  * [Upload Public Key to GCP](#upload-public-key-to-gcp)
+  * [Create a VM](#create-a-vm)
+  * [SSH into VM](#ssh-into-vm)
+  * [Configure the VM](#configure-the-vm)
+    + [Download Anaconda](#download-anaconda)
+    + [Download Docker](#download-docker)
+      - [Download docker-compose](#download-docker-compose)
+  * [Install pgcli](#install-pgcli)
+  * [SSH with VSCode](#ssh-with-vscode)
+  * [Port Forwarding in VSCode](#port-forwarding-in-vscode)
+  * [Use pgadmin and Jupyter to run upload-data notebook (ingest data)](#use-pgadmin-and-jupyter-to-run-upload-data-notebook--ingest-data-)
+  * [Install Terraform](#install-terraform)
+  * [SFTP Google Credentials to VM](#sftp-google-credentials-to-vm)
+  * [Run Terraform commands](#run-terraform-commands)
+  * [How to start and stop VM (DO NOT DELETE!)](#how-to-start-and-stop-vm--do-not-delete--)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
-
-<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
 ## Brainstorm: Practices I'm pulling in from past software projects
 
@@ -761,7 +787,7 @@ In the terminal window where you are at the ```~/.ssh``` directory, type ```cat 
 
 ### Create a VM
 
-5. Create a new VM instance in the cloud console
+ Create a new VM instance in the cloud console
 
 Pay particular attention to:
 - Name - ```de-zoomcamp```
@@ -774,7 +800,7 @@ Pay particular attention to:
   - Boot Disk Type - Balanced Persistent Disk
   - Boot Disk Size - 30 GB
 
-6. Note the external IP (copy it from the list of VM instances) 
+Note the external IP (copy it from the list of VM instances) 
 
 ### SSH into VM
 
@@ -893,14 +919,82 @@ Use the command ```docker-compose up -d``` to build the docker containers (it'll
 
 Run ```docker ps``` to see if both containers are running. Note the name of the pgdatabase terminal. In my case, it was ```2_docker_sql_pgdatabase-1```
 
+You should be able to access pgadmin in a browser at ```localhost:8080```
+
+Use the command ```pgcli -h localhost -p 5432 -u root -d ny_taxi``` to check out the schema of the database using pgcli
+
+Navigate to ```~data-engineering-zoomcamp/week_1_basics_n_setup/2_docker_sql``` in your ssh terminal and run the command ```jupyter notebook```
+
+Select the ```upload_data.ipynb``` notebook. Use the process we used earlier to ingest the yellow taxi data, zones, and green taxi data (you'll need to edit the code blocks for each ingestion).
+
+Links:
+- Yellow taxi data: https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz 
+- Zones: https://s3.amazonaws.com/nyc-tlc/misc/taxi+_zone_lookup.csv
+- Green taxi data: https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-01.csv.gz
+
+Use pgcli or pgadmin to make sure that the data has been ingested properly.
 
 
 ### Install Terraform
 
+Navigate to the [Terraform downloads page](https://developer.hashicorp.com/terraform/downloads)
+
+Right-click on the Linux AMD64 link (example: https://releases.hashicorp.com/terraform/1.3.7/terraform_1.3.7_linux_amd64.zip)
+
+Navigate to your ```/bin``` folder and run ```wget https://releases.hashicorp.com/terraform/1.3.7/terraform_1.3.7_linux_amd64.zip```
+
+Run ```unzip terraform_1.3.7_linux_amd64.zip``` to unzip the file.
+
+If you do not have unzip installed, run ```sudo apt-get install unzip``` first. 
+
+Run ```rm terraform_1.3.7_linux_amd64.zip``` to remove the zip file from storage.
+
+Since we've already added ```/bin``` to the path folder and the unzipped terraform file is executable, you should be able to run terraform commands.
+
+Navigate to ```~data-engineering-zoomcamp/week_1_basics_n_setup/1_terraform_gcp/terraform```
+
+The ```main.tf``` and ```variables.tf``` files should be in that directory.
+
+
 ### SFTP Google Credentials to VM
 
-### Configure gcloud
+In a local terminal, navigate to where you stored your .json account keys.
+
+From the local terminal, start sftp ```sftp de-zoomcamp```
+
+In the sftp session, make a ```.gc``` directory. ```mkdir .gc```
+
+Enter the ```.gc``` directory - ```cd .gc```
+
+Use the ```put``` command to transfer the files to the ```.gc``` directory.
+
+Example: ```put ny_rides.json
+
+Use one of your ssh terminals to make sure that the ```ny_rides.json``` file is in the ```.gc``` directory.
+
+In the ssh directory, run these commands to authenticate with the ssh file:
+
+```console
+export GOOGLE_APPLICATION_CREDENTIALS=~/.gc/ny_rides.json
+```
+
+```console 
+gcloud auth activate-service-account --key-file $GOOGLE_APPLICATION_CREDENTIALS
+```
 
 ### Run Terraform commands
 
+Navigate back to ```~data-engineering-zoomcamp/week_1_basics_n_setup/1_terraform_gcp/terraform``` in a ssh window
+
+The ```main.tf``` and ```variables.tf``` files should be in that directory.
+
+Run these terraform commands:
+```terraform init```
+```terraform plan``` (make sure you have your GCP Project ID handy)
+```terraform apply```
+
 ### How to start and stop VM (DO NOT DELETE!)
+
+On the GCP VM page, you can click the three dots next to your running instance. Select STOP to pause the instance (all of your files will be available when you return to the VM). Do not press DELETE unless you want all of your information to be deleted.
+
+When you need to use the VM again, start the VM in GCP (three dots). Take note of the External IP. Edit the config file in the ```~/.ssh``` folder with the new External IP. Save the file and ssh via the terminal or VSCode.
