@@ -71,6 +71,9 @@ categories: [data-engineering]
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
+## Link to future weeks
+[Link to notes](https://github.com/teacherc/de_zoomcamp_candace2023#date-engineering-zoomcamp---candaces-hw-and-notes)
+
 
 ## Brainstorm: Practices I'm pulling in from past software projects
 
